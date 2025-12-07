@@ -1,6 +1,6 @@
 // src/controllers/kioskController.js
 const asyncHandler = require('express-async-handler');
-const Kiosk = require('../models/Kiosk'); // note: filename 'kiosk.js' in your models folder
+const Kiosk = require('../models/kiosk'); // note: filename 'kiosk.js' in your models folder
 
 // GET /api/kiosks/me
 // return kiosk that belongs to the authenticated user
@@ -60,7 +60,8 @@ const deleteKiosk = asyncHandler(async (req, res) => {
   if (kiosk.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
     res.status(403); throw new Error('Not allowed');
   }
-  await kiosk.remove();
+  await kiosk.deleteOne();
+
   res.json({ message: 'Kiosk deleted' });
 });
 
