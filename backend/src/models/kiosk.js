@@ -1,3 +1,4 @@
+// src/models/Kiosk.js
 const mongoose = require('mongoose');
 
 const KioskSchema = new mongoose.Schema({
@@ -18,4 +19,6 @@ const KioskSchema = new mongoose.Schema({
 
 KioskSchema.index({ geo: '2dsphere' });
 
-module.exports = mongoose.model('Kiosk', KioskSchema);  
+// Avoid OverwriteModelError in development/reloads
+const modelName = 'Kiosk';
+module.exports = mongoose.models[modelName] || mongoose.model(modelName, KioskSchema);

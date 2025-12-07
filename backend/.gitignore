@@ -1,2 +1,4 @@
 node_modules
-tamwilna.env
+.env
+.DS_Store
+npm-debug.log
