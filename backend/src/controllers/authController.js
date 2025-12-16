@@ -15,7 +15,7 @@ const register = asyncHandler(async (req, res) => {
   }
   const exists = await User.findOne({ email });
   if (exists) { res.status(400); throw new Error('Email already in use'); }
-  const user = await User.create({ email, password, role: role || 'kiosk' });
+  const user = await User.create({ email, password:hashedPassword, role: role || 'kiosk' });
   res.status(201).json({
     _id: user._id,
     email: user.email,
@@ -26,7 +26,7 @@ const register = asyncHandler(async (req, res) => {
 
 // Login
 const login = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password:hashedPassword} = req.body;
   if (!email || !password) { res.status(400); throw new Error('Email and password required'); }
   const user = await User.findOne({ email });
   if (user && await user.matchPassword(password)) {
