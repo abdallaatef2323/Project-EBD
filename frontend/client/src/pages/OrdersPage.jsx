@@ -1,11 +1,22 @@
+import { useEffect, useState } from 'react';
+import api from '../api/axios';
+
 export default function OrdersPage() {
+  const [orders, setOrders] = useState([]);
+
+  useEffect(() => {
+    api.get('/orders').then(res => setOrders(res.data));
+  }, []);
+
   return (
     <div>
-      <h1>Orders</h1>
-
+      <h2>Orders</h2>
       <ul>
-        <li>Order #1 – 80 EGP – Approved</li>
-        <li>Order #2 – 120 EGP – Pending</li>
+        {orders.map(o => (
+          <li key={o._id}>
+            {o.totalAmount} EGP — {o.status}
+          </li>
+        ))}
       </ul>
     </div>
   );

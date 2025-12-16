@@ -2,9 +2,12 @@ const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/auth');
 
-// GET all orders for logged-in user
 router.get('/', protect, (req, res) => {
-  res.json([]);
+  res.json({
+    totalOrders: 1,
+    creditUsed: 80,
+    creditLimit: 500
+  });
 });
 
 module.exports = router;
