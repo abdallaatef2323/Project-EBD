@@ -1,27 +1,41 @@
 import { createContext, useState } from 'react';
 
-// 1️⃣ Create the context
 export const CartContext = createContext();
 
-// 2️⃣ Create the provider
 export function CartProvider({ children }) {
   const [cartItems, setCartItems] = useState([]);
 
-  // 3️⃣ Add item to cart
   const addToCart = (item) => {
-    setCartItems(prevItems => [...prevItems, item]);
+    setCartItems(prev => {
+      if (item.id) {
+        const existingIndex = prev.findIndex(i => i.id === item.id);
+        if (existingIndex >= 0) {
+          const updated = [...prev];
+          updated[existingIndex] = {
+            ...updated[existingIndex],
+            quantity: (updated[existingIndex].quantity || 1) + 1
+          };
+          return updated;
+        }
+      }
+      return [...prev, { ...item, quantity: 1 }];
+    });
   };
 
-  // 4️⃣ Remove item from cart (optional but useful)
   const removeFromCart = (index) => {
-    setCartItems(prevItems =>
-      prevItems.filter((_, i) => i !== index)
-    );
+    setCartItems(prev => prev.filter((_, i) => i !== index));
   };
 
-  // 5️⃣ Clear cart (optional)
   const clearCart = () => {
     setCartItems([]);
+  };
+
+  const getTotalPrice = () => {
+    return cartItems.reduce((total, item) => {
+      const price = item.price || 0;
+      const quantity = item.quantity || 1;
+      return total + (price * quantity);
+    }, 0);
   };
 
   return (
@@ -30,7 +44,8 @@ export function CartProvider({ children }) {
         cartItems,
         addToCart,
         removeFromCart,
-        clearCart
+        clearCart,
+        getTotalPrice
       }}
     >
       {children}

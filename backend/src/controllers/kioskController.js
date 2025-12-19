@@ -1,93 +1,85 @@
-// src/controllers/kioskController.js
 const asyncHandler = require('express-async-handler');
-const Kiosk = require('../models/kiosk'); // note: filename 'kiosk.js' in your models folder
+const Kiosk = require('../models/kiosk');
+const Order = require('../models/order');
 
+// =======================
 // GET /api/kiosks/me
-// return kiosk that belongs to the authenticated user
+// =======================
 const getMyKiosk = asyncHandler(async (req, res) => {
-  const userId = req.user && req.user._id;
-  if (!userId) {
-    res.status(401);
-    throw new Error('Not authorized');
-  }
+  const kiosk = await Kiosk.findOne({ user: req.user._id });
 
-  const kiosk = await Kiosk.findOne({ user: userId }).populate('user', 'email role');
   if (!kiosk) {
     res.status(404);
-    throw new Error('Kiosk not found for this user');
+    throw new Error('Kiosk not found');
   }
 
   res.json(kiosk);
 });
 
-// Create kiosk profile (onboarding) - logged-in kiosk user
+// =======================
+// POST /api/kiosks
+// =======================
 const createKiosk = asyncHandler(async (req, res) => {
-  const { kioskName, ownerName, phone, address, geo } = req.body;
-  if (!kioskName || !ownerName || !phone) { res.status(400); throw new Error('Missing required fields'); }
-  // One kiosk per user (MVP)
+  const { kioskName, ownerName, phone, address } = req.body;
+
   const exists = await Kiosk.findOne({ user: req.user._id });
-  if (exists) { res.status(400); throw new Error('Kiosk already exists for this user'); }
+  if (exists) {
+    res.status(400);
+    throw new Error('Kiosk already exists');
+  }
+
   const kiosk = await Kiosk.create({
-    user: req.user._id, kioskName, ownerName, phone, address, geo
+    user: req.user._id,
+    kioskName,
+    ownerName,
+    phone,
+    address,
+    status: 'pending',
+    creditLimit: 0,
+    outstandingBalance: 0,
   });
+
   res.status(201).json(kiosk);
 });
 
-// Get kiosk by id
-const getKiosk = asyncHandler(async (req, res) => {
-  const kiosk = await Kiosk.findById(req.params.id).populate('user', 'email role');
-  if (!kiosk) { res.status(404); throw new Error('Kiosk not found'); }
-  res.json(kiosk);
-});
-
-// Update kiosk (owner or admin)
-const updateKiosk = asyncHandler(async (req, res) => {
-  const kiosk = await Kiosk.findById(req.params.id);
-  if (!kiosk) { res.status(404); throw new Error('Kiosk not found'); }
-  if (kiosk.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
-    res.status(403); throw new Error('Not allowed');
-  }
-  Object.assign(kiosk, req.body);
-  const updated = await kiosk.save();
-  res.json(updated);
-});
-
-// Delete kiosk (owner or admin)
-const deleteKiosk = asyncHandler(async (req, res) => {
-  const kiosk = await Kiosk.findById(req.params.id);
-  if (!kiosk) { res.status(404); throw new Error('Kiosk not found'); }
-  // only kiosk owner or admin can delete
-  if (kiosk.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
-    res.status(403); throw new Error('Not allowed');
-  }
-  await kiosk.deleteOne();
-
-  res.json({ message: 'Kiosk deleted' });
-});
-
-// Admin: list kiosks
+// =======================
+// ADMIN: GET ALL KIOSKS
+// =======================
 const listKiosks = asyncHandler(async (req, res) => {
-  const kiosks = await Kiosk.find().populate('user', 'email');
+  const kiosks = await Kiosk.find().populate('user', 'email role');
   res.json(kiosks);
 });
 
-// Admin: adjust credit limit
-const adjustCredit = asyncHandler(async (req, res) => {
+// =======================
+// ADMIN: APPROVE / REJECT KIOSK
+// =======================
+const approveKiosk = asyncHandler(async (req, res) => {
+  const { status } = req.body; // approved | rejected
+
   const kiosk = await Kiosk.findById(req.params.id);
-  if (!kiosk) { res.status(404); throw new Error('Kiosk not found'); }
-  const { creditLimit } = req.body;
-  if (creditLimit == null) { res.status(400); throw new Error('creditLimit is required'); }
-  kiosk.creditLimit = Number(creditLimit);
+  if (!kiosk) {
+    res.status(404);
+    throw new Error('Kiosk not found');
+  }
+
+  kiosk.status = status;
   await kiosk.save();
+
   res.json(kiosk);
 });
 
-module.exports = { 
-  createKiosk, 
-  getKiosk, 
-  updateKiosk, 
-  deleteKiosk,
+// =======================
+// ADMIN: VIEW KIOSK ORDERS
+// =======================
+const getKioskOrders = asyncHandler(async (req, res) => {
+  const orders = await Order.find({ kiosk: req.params.id });
+  res.json(orders);
+});
+
+module.exports = {
   getMyKiosk,
-  listKiosks, 
-  adjustCredit 
+  createKiosk,
+  listKiosks,
+  approveKiosk,
+  getKioskOrders,
 };

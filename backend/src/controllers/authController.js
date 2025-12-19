@@ -3,39 +3,33 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-// =======================
 // Generate JWT
-// =======================
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
   });
 };
 
-// =======================
-// @desc    Register user
-// @route   POST /api/auth/register
-// =======================
+// @route POST /api/auth/register
 const register = asyncHandler(async (req, res) => {
   const { email, password, role } = req.body;
 
   if (!email || !password) {
     res.status(400);
-    throw new Error('Email and password are required');
+    throw new Error('Email and password required');
   }
 
   const userExists = await User.findOne({ email });
   if (userExists) {
     res.status(400);
-    throw new Error('Email already in use');
+    throw new Error('User already exists');
   }
 
-  // ⚠️ IMPORTANT:
-  // Do NOT hash here.
-  // Password will be hashed automatically in User model (pre-save hook)
+  const hashedPassword = await bcrypt.hash(password, 10);
+
   const user = await User.create({
     email,
-    password, // plain password
+    password: hashedPassword,
     role: role || 'kiosk',
   });
 
@@ -47,16 +41,11 @@ const register = asyncHandler(async (req, res) => {
   });
 });
 
-// =======================
-// @desc    Login user
-// @route   POST /api/auth/login
-// =======================
+// @route POST /api/auth/login
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  // Explicitly select password because it is hidden in the model
   const user = await User.findOne({ email }).select('+password');
-
   if (!user) {
     res.status(401);
     throw new Error('Invalid credentials');
@@ -76,10 +65,7 @@ const login = asyncHandler(async (req, res) => {
   });
 });
 
-// =======================
-// @desc    Get current user
-// @route   GET /api/auth/me
-// =======================
+// @route GET /api/auth/me
 const getMe = asyncHandler(async (req, res) => {
   res.json(req.user);
 });

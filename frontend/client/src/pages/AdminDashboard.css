@@ -1,0 +1,29 @@
+.admin-page {
+  padding: 20px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+th {
+  background: #f4f4f4;
+}
+
+button {
+  margin: 2px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+button.danger {
+  background: #d9534f;
+  color: white;
+}
