@@ -6,6 +6,7 @@ const kioskRoutes = require('./routes/kioskRoutes');
 const productRoutes = require('./routes/productRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -17,9 +18,11 @@ app.use('/api/auth', authRoutes);
 app.use('/api/kiosks', kioskRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
-app.use('/api/admin', adminRoutes); // ✅ ADMIN API
+app.use('/api/admin', adminRoutes);
 
-app.get('/', (req, res) => res.send('Tamwilna API running'));
+app.get('/', (req, res) => {
+  res.send('Tamwilna API running');
+});
 
 app.use(errorHandler);
 

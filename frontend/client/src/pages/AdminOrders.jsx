@@ -5,24 +5,22 @@ export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
 
   useEffect(() => {
-    api.get('/orders')
-      .then(res => setOrders(res.data))
-      .catch(err => console.error(err));
+    api.get('/orders/all')
+      .then(res => setOrders(res.data));
   }, []);
 
-  const updateStatus = (id, status) => {
-    api.put(`/orders/${id}`, { status })
-      .then(() => {
-        setOrders(orders.map(o =>
-          o._id === id ? { ...o, status } : o
-        ));
-      });
+  const updateStatus = async (id, status) => {
+    await api.put(`/orders/${id}/status`, { status });
+    setOrders(prev =>
+      prev.map(o => o._id === id ? { ...o, status } : o)
+    );
   };
 
   return (
     <div>
-      <h1>BNPL Orders</h1>
-      <table className="table">
+      <h2>BNPL Orders</h2>
+
+      <table>
         <thead>
           <tr>
             <th>Kiosk</th>
@@ -38,8 +36,12 @@ export default function AdminOrders() {
               <td>{o.totalAmount}</td>
               <td>{o.status}</td>
               <td>
-                <button onClick={() => updateStatus(o._id, 'approved')}>Approve</button>
-                <button onClick={() => updateStatus(o._id, 'rejected')}>Reject</button>
+                <button onClick={() => updateStatus(o._id, 'approved')}>
+                  Approve
+                </button>
+                <button onClick={() => updateStatus(o._id, 'rejected')}>
+                  Reject
+                </button>
               </td>
             </tr>
           ))}

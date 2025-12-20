@@ -3,10 +3,9 @@ import api from '../api/axios';
 import { AuthContext } from '../context/AuthContext';
 
 export default function OrdersPage() {
-  const [orders, setOrders] = useState([]);
   const { user } = useContext(AuthContext);
+  const [orders, setOrders] = useState([]);
 
-  // Load orders
   const loadOrders = async () => {
     const res = await api.get('/orders');
     setOrders(res.data);
@@ -16,15 +15,8 @@ export default function OrdersPage() {
     loadOrders();
   }, []);
 
-  // Cancel order
-  const cancelOrder = async (id) => {
-    await api.put(`/orders/${id}/cancel`);
-    loadOrders();
-  };
-
-  // Approve order
-  const approveOrder = async (id) => {
-    await api.put(`/orders/${id}/approve`);
+  const updateStatus = async (id, status) => {
+    await api.put(`/orders/${id}/status`, { status });
     loadOrders();
   };
 
@@ -33,23 +25,29 @@ export default function OrdersPage() {
       <div className="card">
         <h2>Orders</h2>
 
-        {orders.length === 0 && <p>No orders yet.</p>}
+        {orders.length === 0 && <p>No orders found.</p>}
 
-        {orders.map(order => (
-          <div key={order._id} className="order-item">
-            {/* Your display format */}
-            <strong>{order.totalAmount} EGP</strong>
-            <span className={`status ${order.status}`}>{order.status}</span>
+        {orders.map(o => (
+          <div key={o._id} className="order-item">
+            <div>
+              <strong>{o.totalAmount} EGP</strong>
+              <div>Status: {o.status}</div>
+            </div>
 
-            {/* Friend's action buttons */}
-            {user && user.role === 'kiosk' && order.status === 'pending' && (
-              <button className="btn-danger" onClick={() => cancelOrder(order._id)}>
+            {user.role === 'kiosk' && o.status === 'pending' && (
+              <button
+                className="btn-danger"
+                onClick={() => updateStatus(o._id, 'cancelled')}
+              >
                 Cancel
               </button>
             )}
 
-            {user && user.role === 'admin' && order.status === 'pending' && (
-              <button className="btn-success" onClick={() => approveOrder(order._id)}>
+            {user.role === 'admin' && o.status === 'pending' && (
+              <button
+                className="btn-success"
+                onClick={() => updateStatus(o._id, 'approved')}
+              >
                 Approve
               </button>
             )}

@@ -1,37 +1,47 @@
-import { createContext, useState } from 'react';
+import { createContext, useState, useEffect } from 'react';
+import api from '../api/axios';
 
 export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Load user from token on refresh
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
+    api.get('/auth/me')
+      .then(res => setUser(res.data))
+      .catch(() => localStorage.removeItem('token'))
+      .finally(() => setLoading(false));
+  }, []);
 
   const login = async (email, password) => {
-    // Check if email contains 'admin' for admin role
-    const isAdmin = email.includes('admin') || email === 'admin@tamwilna.com';
-    
-    if (isAdmin) {
-      setUser({
-        email,
-        role: 'admin',
-        name: 'System Administrator',
-        permissions: ['manage_kiosks', 'approve_orders', 'view_all']
-      });
-    } else {
-      setUser({
-        email,
-        role: 'kiosk',
-        name: 'Kiosk Operator',
-        kioskId: 'K' + Math.floor(1000 + Math.random() * 9000),
-        creditLimit: 5000,
-        outstandingBalance: 1200
-      });
-    }
+    const res = await api.post('/auth/login', { email, password });
+    localStorage.setItem('token', res.data.token);
+    setUser(res.data);
   };
 
-  const logout = () => setUser(null);
+  const register = async (email, password) => {
+    const res = await api.post('/auth/register', { email, password });
+    localStorage.setItem('token', res.data.token);
+    setUser(res.data);
+  };
+
+  const logout = () => {
+    localStorage.removeItem('token');
+    setUser(null);
+  };
+
+  if (loading) return <div style={{ padding: 40 }}>Loading...</div>;
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

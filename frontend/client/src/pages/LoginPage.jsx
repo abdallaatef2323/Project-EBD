@@ -1,37 +1,29 @@
 import { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 export default function LoginPage() {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+    setError('');
+
     try {
       await login(email, password);
-      
-      // Navigate based on role
+
       if (email.includes('admin')) {
-        navigate('/admin'); // Admin goes to admin panel
+        navigate('/admin');
       } else {
-        navigate('/dashboard'); // Kiosk goes to dashboard
+        navigate('/dashboard');
       }
     } catch {
-      alert('Login failed. Try admin@tamwilna.com (admin) or any email (kiosk)');
-    }
-  };
-
-  const quickLogin = (type) => {
-    if (type === 'admin') {
-      setEmail('admin@tamwilna.com');
-      setPassword('admin123');
-    } else {
-      setEmail('kiosk@example.com');
-      setPassword('kiosk123');
+      setError('Invalid email or password');
     }
   };
 
@@ -39,36 +31,34 @@ export default function LoginPage() {
     <div className="page">
       <div className="card">
         <h2>Login</h2>
-        
+
+        {error && <div className="alert alert-danger">{error}</div>}
+
         <form onSubmit={handleSubmit}>
           <input
             type="email"
             placeholder="Email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={e => setEmail(e.target.value)}
             required
           />
-          
+
           <input
             type="password"
             placeholder="Password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={e => setPassword(e.target.value)}
             required
           />
-          
-          <button type="submit">Login</button>
+
+          <button className="btn-primary" type="submit">
+            Login
+          </button>
         </form>
-        
-        <div style={{ marginTop: '20px' }}>
-          <p>Quick login:</p>
-          <button onClick={() => quickLogin('admin')} style={{ marginRight: '10px' }}>
-            Login as Admin
-          </button>
-          <button onClick={() => quickLogin('kiosk')}>
-            Login as Kiosk
-          </button>
-        </div>
+
+        <p style={{ textAlign: 'center', marginTop: 16 }}>
+          No account? <Link to="/register">Register</Link>
+        </p>
       </div>
     </div>
   );

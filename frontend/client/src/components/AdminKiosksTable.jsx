@@ -3,32 +3,26 @@ import api from '../api/axios';
 
 export default function AdminKiosksTable() {
   const [kiosks, setKiosks] = useState([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    api.get('/kiosks')
-      .then(res => {
-        setKiosks(res.data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setLoading(false);
-      });
-  }, []);
+  const load = () =>
+    api.get('/kiosks').then(res => setKiosks(res.data));
 
-  if (loading) return <p>Loading kiosks...</p>;
+  useEffect(load, []);
+
+  const updateStatus = async (id, status) => {
+    await api.put(`/kiosks/${id}/status`, { status });
+    load();
+  };
 
   return (
-    <table className="table">
+    <table>
       <thead>
         <tr>
-          <th>Kiosk Name</th>
+          <th>Name</th>
           <th>Owner</th>
-          <th>Phone</th>
-          <th>Credit Limit</th>
-          <th>Outstanding</th>
+          <th>Credit</th>
           <th>Status</th>
+          <th>Action</th>
         </tr>
       </thead>
       <tbody>
@@ -36,10 +30,16 @@ export default function AdminKiosksTable() {
           <tr key={k._id}>
             <td>{k.kioskName}</td>
             <td>{k.ownerName}</td>
-            <td>{k.phone}</td>
-            <td>{k.creditLimit}</td>
-            <td>{k.outstandingBalance}</td>
+            <td>{k.outstandingBalance}/{k.creditLimit}</td>
             <td>{k.status}</td>
+            <td>
+              <button onClick={() => updateStatus(k._id, 'approved')}>
+                Approve
+              </button>
+              <button onClick={() => updateStatus(k._id, 'rejected')}>
+                Reject
+              </button>
+            </td>
           </tr>
         ))}
       </tbody>

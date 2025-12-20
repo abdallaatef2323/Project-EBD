@@ -1,10 +1,10 @@
 const asyncHandler = require('express-async-handler');
 const Order = require('../models/order');
 const Kiosk = require('../models/kiosk');
+const mongoose = require('mongoose');
 
 // =======================
 // KIOSK: Place Order
-// POST /api/orders
 // =======================
 const placeOrder = asyncHandler(async (req, res) => {
   const { items, totalAmount } = req.body;
@@ -25,11 +25,18 @@ const placeOrder = asyncHandler(async (req, res) => {
     throw new Error('Credit limit exceeded');
   }
 
+  // 🔥 FINAL NORMALIZATION (THIS FIXES EVERYTHING)
+  const normalizedItems = items.map(item => ({
+    product: item.product || new mongoose.Types.ObjectId(),
+    qty: item.qty || item.quantity || 1,   // ✅ REQUIRED FIELD
+    price: item.price,
+  }));
+
   const order = await Order.create({
     kiosk: kiosk._id,
-    items,
+    items: normalizedItems,
     totalAmount,
-    status: 'pending',
+    status: 'placed', // ✅ VALID ENUM
     dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
   });
 
@@ -41,7 +48,6 @@ const placeOrder = asyncHandler(async (req, res) => {
 
 // =======================
 // KIOSK: Get My Orders
-// GET /api/orders
 // =======================
 const getMyOrders = asyncHandler(async (req, res) => {
   const kiosk = await Kiosk.findOne({ user: req.user._id });
@@ -56,7 +62,6 @@ const getMyOrders = asyncHandler(async (req, res) => {
 
 // =======================
 // ADMIN: Get All Orders
-// GET /api/orders/all
 // =======================
 const getAllOrders = asyncHandler(async (req, res) => {
   const orders = await Order.find().populate('kiosk');
@@ -65,7 +70,6 @@ const getAllOrders = asyncHandler(async (req, res) => {
 
 // =======================
 // ADMIN: Orders by Kiosk
-// GET /api/orders/kiosk/:id
 // =======================
 const getOrdersByKiosk = asyncHandler(async (req, res) => {
   const orders = await Order.find({ kiosk: req.params.id });
@@ -74,10 +78,24 @@ const getOrdersByKiosk = asyncHandler(async (req, res) => {
 
 // =======================
 // ADMIN: Update Order Status
-// PUT /api/orders/:id/status
 // =======================
 const updateOrderStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
+
+  const allowedStatuses = [
+    'placed',
+    'approved',
+    'dispatched',
+    'delivered',
+    'repaid',
+    'overdue',
+    'cancelled',
+  ];
+
+  if (!allowedStatuses.includes(status)) {
+    res.status(400);
+    throw new Error('Invalid order status');
+  }
 
   const order = await Order.findById(req.params.id);
   if (!order) {

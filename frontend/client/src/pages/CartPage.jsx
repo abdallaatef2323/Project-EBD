@@ -1,56 +1,55 @@
-import { createContext, useState } from 'react';
+import { useContext } from 'react';
+import api from '../api/axios';
+import { CartContext } from '../context/CartContext';
 
-export const CartContext = createContext();
+export default function CartPage() {
+  const { cartItems, removeFromCart, clearCart, getTotalPrice } = useContext(CartContext);
 
-export function CartProvider({ children }) {
-  const [cartItems, setCartItems] = useState([]);
+  const placeOrder = async () => {
+    try {
+      const items = cartItems.map(i => ({
+        name: i.name,
+        qty: i.quantity,
+        price: i.price,
+      }));
 
-  const addToCart = (item) => {
-    setCartItems(prev => {
-      // If item has id, check for duplicates
-      if (item.id) {
-        const existingIndex = prev.findIndex(i => i.id === item.id);
-        if (existingIndex >= 0) {
-          const updated = [...prev];
-          updated[existingIndex] = {
-            ...updated[existingIndex],
-            quantity: (updated[existingIndex].quantity || 1) + 1
-          };
-          return updated;
-        }
-      }
-      // Add new item
-      return [...prev, { ...item, quantity: 1 }];
-    });
-  };
+      await api.post('/orders', {
+        items,
+        totalAmount: getTotalPrice(),
+      });
 
-  const removeFromCart = (index) => {
-    setCartItems(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const clearCart = () => {
-    setCartItems([]);
-  };
-
-  const getTotalPrice = () => {
-    return cartItems.reduce((total, item) => {
-      const price = item.price || 0;
-      const quantity = item.quantity || 1;
-      return total + (price * quantity);
-    }, 0);
+      clearCart();
+      alert('Order placed successfully');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Order failed');
+    }
   };
 
   return (
-    <CartContext.Provider
-      value={{
-        cartItems,
-        addToCart,
-        removeFromCart,
-        clearCart,
-        getTotalPrice
-      }}
-    >
-      {children}
-    </CartContext.Provider>
+    <div className="page">
+      <div className="card">
+        <h2>Cart</h2>
+
+        {cartItems.map((item, index) => (
+          <div key={index} className="cart-item">
+            <span>{item.name}</span>
+            <span>{item.price} EGP</span>
+            <button className="btn-danger" onClick={() => removeFromCart(index)}>
+              Remove
+            </button>
+          </div>
+        ))}
+
+        <h3>Total: {getTotalPrice()} EGP</h3>
+
+        <button className="btn-success" onClick={placeOrder}>
+          Place Order
+        </button>
+
+        <button className="btn-danger" onClick={clearCart}>
+          Clear Cart
+        </button>
+      </div>
+    </div>
   );
 }

@@ -12,6 +12,7 @@ export default function RegisterPage() {
 
   const handleRegister = async (e) => {
     e.preventDefault();
+
     try {
       await register(email, password);
       navigate('/dashboard');
@@ -22,34 +23,37 @@ export default function RegisterPage() {
 
   return (
     <div className="page">
-      <h1>🔐 Tamwilna Register</h1>
-      <p>Create a kiosk account</p>
+      <div className="card">
+        <h2>Register</h2>
 
-      <form onSubmit={handleRegister}>
-        <input
-          type="email"
-          placeholder="Email address"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
+        {error && <div className="alert alert-danger">{error}</div>}
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+        <form onSubmit={handleRegister}>
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
 
-        <button type="submit">Register</button>
-      </form>
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+          <button className="btn-primary" type="submit">
+            Register
+          </button>
+        </form>
 
-      <p>
-        Already have an account? <Link to="/login">Login</Link>
-      </p>
+        <p className="mt-3">
+          Already have an account? <Link to="/login">Login</Link>
+        </p>
+      </div>
     </div>
   );
 }

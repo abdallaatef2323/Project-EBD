@@ -1,10 +1,10 @@
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../api/axios';
 
 export default function ProfilePage() {
   const { user } = useContext(AuthContext);
-  
+
   const [form, setForm] = useState({
     kioskName: '',
     ownerName: '',
@@ -12,7 +12,14 @@ export default function ProfilePage() {
     address: '',
   });
 
+  const [kiosk, setKiosk] = useState(null);
   const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    api.get('/kiosks/me')
+      .then(res => setKiosk(res.data))
+      .catch(() => {});
+  }, []);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -23,7 +30,7 @@ export default function ProfilePage() {
 
     try {
       await api.post('/kiosks', form);
-      setMessage('✅ Kiosk profile created successfully');
+      setMessage('✅ Kiosk profile created. Waiting for admin approval.');
     } catch (err) {
       setMessage(err.response?.data?.message || '❌ Error creating kiosk');
     }
@@ -34,64 +41,51 @@ export default function ProfilePage() {
       <div className="card">
         <h2>Profile</h2>
 
-        {/* Always show user info */}
-        <div className="profile-info">
-          <p><strong>Email:</strong> {user?.email || 'Not logged in'}</p>
-          <p><strong>Role:</strong> {user?.role || 'Unknown'}</p>
-        </div>
+        <p><strong>Email:</strong> {user.email}</p>
+        <p><strong>Role:</strong> {user.role}</p>
 
-        {/* If user has NO kiosk, show creation form */}
-        {!user?.kioskId && user?.role === 'kiosk' ? (
-          <div className="kiosk-form-section">
-            <h3>Create Your Kiosk Profile</h3>
-            <p>You need to create a kiosk profile to start using BNPL.</p>
-            
+        {kiosk ? (
+          <div className="profile-message">
+            <p><strong>Kiosk Name:</strong> {kiosk.kioskName}</p>
+            <p><strong>Status:</strong> {kiosk.status}</p>
+            <p><strong>Credit Limit:</strong> {kiosk.creditLimit} EGP</p>
+            <p><strong>Used Credit:</strong> {kiosk.outstandingBalance} EGP</p>
+            <p><strong>Phone:</strong> {kiosk.phone}</p>
+            <p><strong>Address:</strong> {kiosk.address}</p>
+          </div>
+        ) : (
+          <>
+            <h3>Create Kiosk Profile</h3>
             <form onSubmit={handleSubmit}>
               <input
                 name="kioskName"
                 placeholder="Kiosk Name"
-                value={form.kioskName}
                 onChange={handleChange}
                 required
               />
-
               <input
                 name="ownerName"
                 placeholder="Owner Name"
-                value={form.ownerName}
                 onChange={handleChange}
                 required
               />
-
               <input
                 name="phone"
-                placeholder="Phone Number"
-                value={form.phone}
+                placeholder="Phone"
                 onChange={handleChange}
                 required
               />
-
               <input
                 name="address"
                 placeholder="Address"
-                value={form.address}
                 onChange={handleChange}
               />
-
-              <button type="submit">Create Kiosk Profile</button>
+              <button type="submit">Create Kiosk</button>
             </form>
-          </div>
-        ) : (
-          /* If user HAS kiosk, show profile message */
-          <div className="profile-message">
-            {user?.kioskId 
-              ? `✅ Your kiosk profile is active (ID: ${user.kioskId})`
-              : 'ℹ️ Your profile information is shown above.'
-            }
-          </div>
+          </>
         )}
 
-        {message && <div className="message">{message}</div>}
+        {message && <p>{message}</p>}
       </div>
     </div>
   );
